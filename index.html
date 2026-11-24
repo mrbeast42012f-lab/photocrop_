@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PHOTOCROP</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#16171b;--p1:#1e2026;--p2:#272a32;--ln:#363a44;--tx:#e8eaf0;--mu:#9aa0ae;--a1:#4d7cff;--a2:#8a5cff;--a3:#2fd4e6;--g:linear-gradient(120deg,var(--a1),var(--a2) 55%,var(--a3));color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;min-width:1100px;min-height:600px;margin:0;background:var(--bg);color:var(--tx);font:13px Manrope,"Noto Sans Bengali","Nirmala UI",system-ui,sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column}
+button,select,input{font:inherit;color:inherit}
+button{background:var(--p2);border:1px solid var(--ln);border-radius:6px;padding:5px 9px;cursor:pointer;transition:background .15s,border-color .15s}
+button:hover{background:#31353f;border-color:#4a5060}button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--a3);outline-offset:1px}
+select,input[type=text],input[type=number]{background:var(--bg);border:1px solid var(--ln);border-radius:6px;padding:4px 6px}
+#top{display:flex;align-items:center;gap:2px;padding:4px 10px;background:var(--p1);border-bottom:1px solid var(--ln);min-height:36px}
+.logo{font-weight:800;letter-spacing:.06em;background:var(--g);-webkit-background-clip:text;background-clip:text;color:transparent;margin-right:14px}
+.menu{position:relative}.menu>button{background:none;border:0}
+.drop{display:none;position:absolute;top:100%;left:0;z-index:20;min-width:190px;background:var(--p2);border:1px solid var(--ln);border-radius:8px;padding:4px;box-shadow:0 12px 30px #0008}
+.menu:hover .drop,.menu:focus-within .drop{display:block}
+.drop button{display:flex;justify-content:space-between;width:100%;border:0;background:none;text-align:left;gap:20px}
+.drop button:hover{background:var(--a1)}.drop small{color:var(--mu)}
+#opts{display:flex;flex-wrap:wrap;align-items:center;gap:12px;padding:6px 10px;background:var(--p2);border-bottom:1px solid var(--ln)}
+#opts label{display:flex;align-items:center;gap:6px;color:var(--mu)}
+#opts[data-t=move] .o-b,#opts[data-t=move] .o-t,#opts[data-t=crop] .o-b,#opts[data-t=crop] .o-t,#opts[data-t=eyedrop] .o-b,#opts[data-t=eyedrop] .o-t,#opts[data-t=brush] .o-t,#opts[data-t=eraser] .o-t{display:none}
+#opts[data-t=text] .o-b{display:none}
+#opts[data-t=eraser] .o-c{display:none}
+#opts:is([data-t=rsel],[data-t=esel],[data-t=lasso],[data-t=bucket],[data-t=grad],[data-t=srect],[data-t=sell]) .o-b,#opts:is([data-t=rsel],[data-t=esel],[data-t=lasso],[data-t=bucket],[data-t=grad],[data-t=srect],[data-t=sell],[data-t=line]) .o-t{display:none}
+#tools{overflow-y:auto}
+#main{flex:1;display:flex;min-height:0}
+#tools{width:48px;background:var(--p1);border-right:1px solid var(--ln);display:flex;flex-direction:column;gap:4px;padding:6px}
+#tools button{width:36px;height:36px;padding:0;font-size:16px;position:relative}
+#tools button.on{background:var(--g);border-color:transparent;color:#fff;transform:scale(1.06)}
+#work{flex:1;overflow:auto;background:#101114;position:relative}
+#stage{position:relative;margin:40px auto;width:max-content}
+#view{display:block;background:conic-gradient(#3a3d46 25%,#2c2f37 0 50%,#3a3d46 0 75%,#2c2f37 0) 0 0/16px 16px;box-shadow:0 8px 40px #000a;touch-action:none}
+#crop{position:absolute;border:2px dashed var(--a3);background:#2fd4e61a;display:none;pointer-events:none}
+#side{width:270px;background:var(--p1);border-left:1px solid var(--ln);display:flex;flex-direction:column;min-height:0}
+.ph{padding:8px 10px;font-weight:800;border-bottom:1px solid var(--ln)}
+#lctl{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 10px;border-bottom:1px solid var(--ln)}
+#lctl label{display:flex;flex-direction:column;gap:3px;color:var(--mu)}#lctl .w{grid-column:1/3}
+#lbtn{display:flex;flex-wrap:wrap;gap:4px;padding:8px 10px;border-bottom:1px solid var(--ln)}
+#layers{flex:1;overflow:auto;padding:6px}
+.ly{display:flex;align-items:center;gap:6px;padding:6px;border-radius:6px;border:1px solid transparent;cursor:pointer}
+.ly.on{background:var(--p2);border-color:var(--a1)}.ly .eye{padding:2px 6px}.ly .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ly img{width:34px;height:24px;object-fit:cover;border-radius:3px;background:#0006}
+#adj{padding:8px 10px;border-top:1px solid var(--ln);display:flex;gap:6px;flex-wrap:wrap}
+#adj input[type=range]{width:100%}
+#status{display:flex;gap:18px;padding:4px 12px;background:var(--p1);border-top:1px solid var(--ln);color:var(--mu)}
+#modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:50}
+#modal.on{display:flex}
+.card{background:var(--p1);border:1px solid var(--ln);border-radius:12px;padding:22px;width:min(560px,92vw);max-height:86vh;overflow:auto;animation:pop .18s ease-out}
+@keyframes pop{from{transform:translateY(8px) scale(.98);opacity:0}}
+.card h2{margin:0 0 6px;font-size:22px;font-weight:800}.card p{color:var(--mu);margin:0 0 14px}
+.card .row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;align-items:center}
+.card .big{padding:14px 18px;font-weight:600}.card .pri{background:var(--g);border:0;color:#fff;font-weight:600}
+.card ul{margin:6px 0 12px;padding-left:18px;line-height:1.55}.card h3{margin:14px 0 2px;font-size:13px}
+#toast{position:fixed;bottom:40px;left:50%;transform:translateX(-50%);background:var(--p2);border:1px solid var(--ln);padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60}
+#toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="top">
+ <span class="logo">PHOTOCROP</span>
+ <div class="menu"><button>File</button><div class="drop">
+  <button data-a="new">New project</button><button data-a="openImg">Open image(s)… <small>Ctrl+O</small></button><button data-a="openProj">Open project…</button>
+  <button data-a="saveProj">Save project <small>Ctrl+S</small></button><button data-a="exPNG">Export PNG</button><button data-a="exJPG">Export JPG</button><button data-a="exWEBP">Export WebP</button></div></div>
+ <div class="menu"><button>Edit</button><div class="drop"><button data-a="undo">Undo <small>Ctrl+Z</small></button><button data-a="redo">Redo <small>Ctrl+Shift+Z</small></button><button data-a="selAll">Select all <small>Ctrl+A</small></button><button data-a="desel">Deselect <small>Ctrl+D</small></button><button data-a="selInv">Invert selection <small>Ctrl+Shift+I</small></button><button data-a="selFill">Fill selection with colour 1</button><button data-a="selClear">Clear selection <small>Del</small></button></div></div>
+ <div class="menu"><button>Image</button><div class="drop"><button data-a="rot">Rotate 90°</button><button data-a="flipH">Flip horizontal</button><button data-a="flipV">Flip vertical</button><button data-a="resize">Image size…</button><button data-a="cropDo">Apply crop <small>Enter</small></button></div></div>
+ <div class="menu"><button>Layer</button><div class="drop"><button data-a="lnew">New layer <small>Ctrl+Shift+N</small></button><button data-a="ldup">Duplicate <small>Ctrl+J</small></button><button data-a="ldel">Delete</button><button data-a="lmerge">Merge down <small>Ctrl+E</small></button></div></div>
+ <div class="menu"><button>Filter</button><div class="drop" id="fdrop"></div></div>
+ <div class="menu"><button>View</button><div class="drop"><button data-a="zin">Zoom in <small>+</small></button><button data-a="zout">Zoom out <small>−</small></button><button data-a="zfit">Fit to screen</button><button data-a="z100">Actual size</button></div></div>
+ <div class="menu"><button>Help</button><div class="drop"><button data-a="status">Feature status</button><button data-a="keys">Shortcuts</button></div></div>
+</div>
+<div id="opts" data-t="brush">
+ <label class="o-c">Colour 1 <input type="color" id="col" value="#4d7cff"></label><label class="o-c">Colour 2 <input type="color" id="col2" value="#8a5cff"></label>
+ <label class="o-b">Size <input type="range" id="size" min="1" max="200" value="16"><span id="sv">16</span></label>
+ <label class="o-b">Opacity <input type="range" id="bop" min="5" max="100" value="100"></label>
+ <label class="o-t">Text <input type="text" id="txt" value="PHOTOCROP আমার" size="18"></label>
+ <label class="o-t">Size <input type="number" id="tsize" value="96" min="8" max="600" style="width:64px"></label>
+ <span id="hint" style="color:var(--mu)"></span>
+</div>
+<div id="main">
+ <div id="tools"></div>
+ <div id="work"><div id="stage"><canvas id="view"></canvas><div id="crop"></div></div></div>
+ <div id="side">
+  <div class="ph">Layers</div>
+  <div id="lctl">
+   <label>Blend<select id="bm"></select></label>
+   <label>Opacity<input type="range" id="lop" min="0" max="100" value="100"></label>
+  </div>
+  <div id="lbtn"><button data-a="lnew" title="New layer">＋ New</button><button data-a="ldup">Duplicate</button><button data-a="lup">▲</button><button data-a="ldn">▼</button><button data-a="lmerge">Merge ↓</button><button data-a="ldel">Delete</button></div>
+  <div id="layers"></div>
+  <div id="adj"><b style="width:100%">Adjust active layer</b>
+   <select id="ft"></select><button id="fapply">Apply</button><input type="range" id="fv" min="0" max="100" value="50"></div>
+ </div>
+</div>
+<div id="status"><span id="sz"></span><span id="zm"></span><span id="px"></span><span id="ld"></span></div>
+<div id="modal"><div class="card" id="card"></div></div>
+<div id="toast"></div>
+<input type="file" id="fimg" accept="image/*" multiple hidden><input type="file" id="fproj" accept=".json,.photocrop" hidden>
+<script>
+const $=s=>document.querySelector(s),mk=(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c};
+const view=$('#view'),vc=view.getContext('2d');
+let W=1280,H=800,layers=[],act=null,tool='brush',zoom=1,hist=[],redoS=[],idc=0,blank=true,cropR=null;
+const BM=[['Normal','source-over'],['Multiply','multiply'],['Screen','screen'],['Overlay','overlay'],['Soft Light','soft-light'],['Hard Light','hard-light'],['Darken','darken'],['Lighten','lighten'],['Color Dodge','color-dodge'],['Color Burn','color-burn'],['Difference','difference'],['Exclusion','exclusion'],['Hue','hue'],['Saturation','saturation'],['Color','color'],['Luminosity','luminosity']];
+$('#bm').innerHTML=BM.map(b=>`<option value="${b[1]}">${b[0]}</option>`).join('');
+const FT=[['Gaussian blur',v=>`blur(${v/5}px)`],['Brightness',v=>`brightness(${50+v}%)`],['Contrast',v=>`contrast(${50+v}%)`],['Saturation',v=>`saturate(${v*2}%)`],['Hue rotate',v=>`hue-rotate(${v*3.6}deg)`],['Grayscale',v=>`grayscale(${v}%)`],['Sepia',v=>`sepia(${v}%)`],['Invert',v=>`invert(${v}%)`],['Drop shadow glow',v=>`drop-shadow(0 0 ${v/4}px #2fd4e6)`],
+['Threshold',0,(d,v)=>{const a=d.data;for(let i=0;i<a.length;i+=4){const g=.3*a[i]+.59*a[i+1]+.11*a[i+2]>v*2.55?255:0;a[i]=a[i+1]=a[i+2]=g}}],
+['Posterize',0,(d,v)=>{const n=Math.max(2,Math.round(v/10)+1),a=d.data;for(let i=0;i<a.length;i++)if(i%4<3)a[i]=Math.round(a[i]/255*(n-1))/(n-1)*255}],
+['Add noise',0,(d,v)=>{const a=d.data;for(let i=0;i<a.length;i+=4){const n=(Math.random()-.5)*v*2.5;a[i]+=n;a[i+1]+=n;a[i+2]+=n}}],
+['Pixelate',0,(d,v)=>{const s=Math.max(2,Math.round(v/4)),a=d.data,w=d.width,h=d.height;for(let y=0;y<h;y+=s)for(let x=0;x<w;x+=s){const k=(y*w+x)*4;for(let yy=y;yy<Math.min(h,y+s);yy++)for(let xx=x;xx<Math.min(w,x+s);xx++){const j=(yy*w+xx)*4;a[j]=a[k];a[j+1]=a[k+1];a[j+2]=a[k+2];a[j+3]=a[k+3]}}}],
+['Sharpen',0,(d,v)=>{const w=d.width,h=d.height,s=new Uint8ClampedArray(d.data),a=d.data,k=v/50;for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++)for(let c=0;c<3;c++){const i=(y*w+x)*4+c;a[i]=s[i]*(1+4*k)-k*(s[i-4]+s[i+4]+s[i-w*4]+s[i+w*4])}}]];
+$('#ft').innerHTML=FT.map((f,i)=>`<option value="${i}">${f[0]}</option>`).join('');
+$('#fdrop').innerHTML=FT.map((f,i)=>`<button data-f="${i}">${f[0]}</button>`).join('');
+const TOOLS=[['move','✥','Move (V)'],['brush','🖌','Brush (B)'],['eraser','⌫','Eraser (E)'],['text','T','Text (T)'],['crop','⛶','Crop (C)'],['eyedrop','💧','Eyedropper (I)'],['rsel','▭','Rectangle select (M)'],['esel','◯','Ellipse select'],['lasso','➰','Lasso select (L)'],['bucket','🪣','Paint bucket (K)'],['grad','◐','Gradient (G)'],['srect','▢','Filled rectangle (U)'],['sell','⬭','Filled ellipse'],['line','／','Line']];
+$('#tools').innerHTML=TOOLS.map(t=>`<button data-t="${t[0]}" title="${t[2]}">${t[1]}</button>`).join('');
+const HINTS={rsel:'Drag a rectangle selection. Painting and filters then stay inside it',esel:'Drag an elliptical selection',lasso:'Draw freehand around an area to select it',bucket:'Click to fill the area of similar colour with colour 1',grad:'Drag to paint a gradient from colour 1 to colour 2',srect:'Drag to draw a filled rectangle',sell:'Drag to draw a filled ellipse',line:'Drag to draw a line (uses Size)',move:'Drag to move the active layer',brush:'Paint on the active layer',eraser:'Erase pixels from the active layer',text:'Click the canvas to place text on a new layer',crop:'Drag a region, then press Enter to crop',eyedrop:'Click to pick a colour'};
+function setTool(t){tool=t;$('#opts').dataset.t=t;$('#hint').textContent=HINTS[t];document.querySelectorAll('#tools button').forEach(b=>b.classList.toggle('on',b.dataset.t===t));view.style.cursor=t==='move'?'move':'crosshair'}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.k);toast.k=setTimeout(()=>t.classList.remove('on'),1800)}
+function clone(c){const n=mk(c.width,c.height);n.getContext('2d').drawImage(c,0,0);return n}
+function snap(){return{W,H,a:layers.indexOf(act),L:layers.map(l=>({...l,c:clone(l.c)}))}}
+function restore(s){W=s.W;H=s.H;layers=s.L;act=layers[s.a]||layers[layers.length-1];sync()}
+function push(){hist.push(snap());if(hist.length>25)hist.shift();redoS=[];blank=false}
+function undo(){if(!hist.length)return toast('Nothing to undo');redoS.push(snap());restore(hist.pop())}
+function redo(){if(!redoS.length)return toast('Nothing to redo');hist.push(snap());restore(redoS.pop())}
+function newLayer(name,c){const l={id:++idc,name:name||'Layer '+idc,c:c||mk(W,H),vis:true,op:1,bm:'source-over',x:0,y:0};layers.splice(layers.indexOf(act)+1,0,l);act=l;return l}
+function render(clean){render0();if(!clean)ants()}function render0(){view.width=W;view.height=H;for(const l of layers){if(!l.vis)continue;vc.globalAlpha=l.op;vc.globalCompositeOperation=l.bm;vc.drawImage(l.c,l.x,l.y)}vc.globalAlpha=1;vc.globalCompositeOperation='source-over';
+ view.style.width=W*zoom+'px';view.style.height=H*zoom+'px';$('#sz').textContent=W+' × '+H+' px';$('#zm').textContent=Math.round(zoom*100)+'%';$('#ld').textContent=layers.length+' layers'}
+function panel(){const box=$('#layers');box.innerHTML='';for(const l of [...layers].reverse()){const d=document.createElement('div');d.className='ly'+(l===act?' on':'');
+ const th=mk(68,48);const g=th.getContext('2d');g.drawImage(l.c,0,0,68,48);
+ d.innerHTML=`<button class="eye">${l.vis?'👁':'—'}</button><img src="${th.toDataURL()}"><span class="nm"></span>`;d.querySelector('.nm').textContent=l.name;
+ d.querySelector('.eye').onclick=e=>{e.stopPropagation();push();l.vis=!l.vis;sync()};d.onclick=()=>{act=l;sync()};
+ d.querySelector('.nm').ondblclick=()=>dlg('Rename layer',`<div class="row"><input type="text" id="rn" value="${l.name.replace(/"/g,'&quot;')}"></div>`,()=>{push();l.name=$('#rn').value||l.name;sync()});box.appendChild(d)}
+ $('#bm').value=act.bm;$('#lop').value=act.op*100}
+function sync(){render();panel()}
+function dlg(title,html,ok){$('#card').innerHTML=`<h2>${title}</h2>${html}<div class="row"><button class="pri" id="mok">OK</button><button id="mno">Cancel</button></div>`;$('#modal').classList.add('on');$('#mok').onclick=()=>{$('#modal').classList.remove('on');ok()};$('#mno').onclick=()=>$('#modal').classList.remove('on')}
+function initDoc(w,h,bg){W=w;H=h;layers=[];act=null;hist=[];redoS=[];const l=newLayer('Background');if(bg){const x=l.c.getContext('2d');x.fillStyle=bg;x.fillRect(0,0,W,H)}blank=true;fit();sync()}
+function fit(){const r=$('#work').getBoundingClientRect();zoom=Math.min(1,(r.width-80)/W,(r.height-80)/H);zoom=Math.max(.05,zoom)}
+function loadImg(src){return new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=src})}
+async function openImages(files){for(const f of files){const url=URL.createObjectURL(f);try{const i=await loadImg(url);if(blank&&layers.length<=1){initDoc(i.width,i.height,null);act.c.getContext('2d').drawImage(i,0,0);act.name=f.name;blank=false}else{push();const l=newLayer(f.name);if(i.width>W||i.height>H){/* keep doc size; image is clipped */}l.c.getContext('2d').drawImage(i,0,0)}}catch(e){toast('Could not read '+f.name)}URL.revokeObjectURL(url)}fit();sync()}
+function save(){const o={format:'photocrop',v:1,W,H,layers:layers.map(l=>({name:l.name,vis:l.vis,op:l.op,bm:l.bm,x:l.x,y:l.y,png:l.c.toDataURL()}))};dl(new Blob([JSON.stringify(o)],{type:'application/json'}),'project.photocrop.json')}
+function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}
+async function openProj(f){try{const o=JSON.parse(await f.text());if(o.format!=='photocrop')throw 0;W=o.W;H=o.H;layers=[];act=null;for(const m of o.layers){const i=await loadImg(m.png),c=mk(W,H);c.getContext('2d').drawImage(i,0,0);const l=newLayer(m.name,c);Object.assign(l,{vis:m.vis,op:m.op,bm:m.bm,x:m.x,y:m.y})}hist=[];redoS=[];blank=false;fit();sync();toast('Project opened')}catch(e){toast('That file is not a PHOTOCROP project')}}
+function exportAs(type){render(true);view.toBlob(b=>dl(b,'photocrop.'+type.split('/')[1].replace('jpeg','jpg')),type,.92)}
+function eachLayer(fn){layers.forEach(fn)}
+function transform(kind){push();if(kind==='rot'){eachLayer(l=>{const n=mk(H,W),x=n.getContext('2d');x.translate(H,0);x.rotate(Math.PI/2);x.drawImage(l.c,l.x,l.y);l.c=n;l.x=l.y=0});[W,H]=[H,W]}else{eachLayer(l=>{const n=mk(W,H),x=n.getContext('2d');kind==='flipH'?(x.translate(W,0),x.scale(-1,1)):(x.translate(0,H),x.scale(1,-1));x.drawImage(l.c,l.x,l.y);l.c=n;l.x=l.y=0})}fit();sync()}
+function applyCrop(){if(!cropR||cropR.w<2||cropR.h<2)return toast('Drag a crop region first');push();const r=cropR;eachLayer(l=>{const n=mk(r.w,r.h);n.getContext('2d').drawImage(l.c,l.x-r.x,l.y-r.y);l.c=n;l.x=l.y=0});W=r.w;H=r.h;cropR=null;$('#crop').style.display='none';fit();sync()}
+function doFilter(i,v){push();const l=act,w=l.c.width,h=l.c.height,t=mk(w,h),x=t.getContext('2d');if(FT[i][2]){x.drawImage(l.c,0,0);const d=x.getImageData(0,0,w,h);FT[i][2](d,v);x.putImageData(d,0,0)}else{x.filter=FT[i][1](v);x.drawImage(l.c,0,0)}const lc=l.c.getContext('2d');lc.save();clipTo(lc);lc.clearRect(0,0,w,h);lc.drawImage(t,0,0);lc.restore();sync()}
+const A={selAll:()=>{const q=new Path2D();q.rect(0,0,W,H);sel={p:q,rule:'nonzero'};render()},desel:()=>{sel=null;render()},selInv:()=>{const q=new Path2D();q.rect(0,0,W,H);if(sel)q.addPath(sel.p);sel={p:q,rule:'evenodd'};render()},selFill:()=>{push();const x=act.c.getContext('2d');x.save();clipTo(x);x.fillStyle=$('#col').value;x.fillRect(0,0,act.c.width,act.c.height);x.restore();sync()},selClear:()=>{push();const x=act.c.getContext('2d');x.save();clipTo(x);x.clearRect(0,0,act.c.width,act.c.height);x.restore();sync()},new:()=>welcome(true),openImg:()=>$('#fimg').click(),openProj:()=>$('#fproj').click(),saveProj:save,exPNG:()=>exportAs('image/png'),exJPG:()=>exportAs('image/jpeg'),exWEBP:()=>exportAs('image/webp'),undo,redo,
+ rot:()=>transform('rot'),flipH:()=>transform('flipH'),flipV:()=>transform('flipV'),cropDo:applyCrop,
+ resize:()=>dlg('Image size',`<div class="row"><input type="number" id="rw" value="${W}"> × <input type="number" id="rh" value="${H}"> px</div>`,()=>{const w=+$('#rw').value,h=+$('#rh').value;if(!(w>0&&h>0&&w<=8000&&h<=8000))return toast('Use 1–8000 px');push();const sx=w/W,sy=h/H;eachLayer(l=>{const n=mk(w,h);n.getContext('2d').drawImage(l.c,l.x*sx,l.y*sy,l.c.width*sx,l.c.height*sy);l.c=n;l.x=l.y=0});W=w;H=h;fit();sync()}),
+ lnew:()=>{push();newLayer();sync()},ldup:()=>{push();const l=newLayer(act.name+' copy',clone(act.c));Object.assign(l,{op:act.op,bm:act.bm,x:act.x,y:act.y});sync()},
+ ldel:()=>{if(layers.length<2)return toast('A project needs at least one layer');push();const i=layers.indexOf(act);layers.splice(i,1);act=layers[Math.max(0,i-1)];sync()},
+ lup:()=>{const i=layers.indexOf(act);if(i<layers.length-1){push();[layers[i],layers[i+1]]=[layers[i+1],layers[i]];sync()}},
+ ldn:()=>{const i=layers.indexOf(act);if(i>0){push();[layers[i],layers[i-1]]=[layers[i-1],layers[i]];sync()}},
+ lmerge:()=>{const i=layers.indexOf(act);if(i<1)return toast('No layer below to merge into');push();const b=layers[i-1],x=b.c.getContext('2d');x.globalAlpha=act.op;x.globalCompositeOperation=act.bm;x.drawImage(act.c,act.x-b.x,act.y-b.y);layers.splice(i,1);act=b;sync()},
+ zin:()=>{zoom=Math.min(8,zoom*1.25);render()},zout:()=>{zoom=Math.max(.05,zoom/1.25);render()},zfit:()=>{fit();render()},z100:()=>{zoom=1;render()},
+ status:()=>dlg('Feature status',`<p>An honest report of what this first build contains.</p><h3>Working</h3><ul><li>Layers: create, delete, duplicate, rename, reorder, visibility, opacity, 16 blend modes, merge down, move</li><li>Tools: move, brush, eraser, text (Unicode incl. Bengali), crop, eyedropper, rectangle/ellipse/lasso selection (paint, fill, delete and filters respect it), paint bucket, gradient, rectangle, ellipse, line</li><li>Pixel filters: threshold, posterize, noise, pixelate, sharpen</li><li>Image: rotate, flip, resize, crop</li><li>Filters on the active layer: blur, brightness, contrast, saturation, hue, grayscale, sepia, invert, glow</li><li>Undo/redo (25 steps), zoom, import of multiple images, export PNG/JPG/WebP, project save and open (.photocrop.json, editable layers preserved)</li></ul><h3>Not built yet</h3><ul><li>Layer masks, clipping, adjustment layers, groups, smart objects, layer effects, magic wand, feather, subject/sky selection</li><li>Healing, clone, liquify, curves, levels, pen/vector tools</li><li>PSD/RAW/TIFF/PDF, CMYK and ICC colour, animation, actions, templates, docking panels</li><li>AI features: they need a backend proxy holding your API key, so none are faked here</li></ul><p>Filters use the browser canvas filter engine, so they may not render in Safari.</p>`,()=>{}),
+ keys:()=>dlg('Shortcuts',`<ul><li>V move · B brush · E eraser · T text · C crop · I eyedropper</li><li>Ctrl+Z undo · Ctrl+Shift+Z redo · Ctrl+J duplicate · Ctrl+E merge down</li><li>Ctrl+Shift+N new layer · Ctrl+S save project · Ctrl+O open image · Enter apply crop</li><li>+ / − zoom</li></ul><p>Ctrl+N and Ctrl+T are reserved by the browser, so use File ▸ New.</p>`,()=>{})};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(b){A[b.dataset.a]();document.activeElement.blur();return}const f=e.target.closest('[data-f]');if(f){doFilter(+f.dataset.f,+$('#fv').value);document.activeElement.blur();return}const t=e.target.closest('[data-t]');if(t&&t.tagName==='BUTTON')setTool(t.dataset.t)});
+$('#fapply').onclick=()=>doFilter(+$('#ft').value,+$('#fv').value);
+$('#bm').onchange=e=>{push();act.bm=e.target.value;render()};
+$('#lop').oninput=e=>{act.op=e.target.value/100;render()};$('#lop').onchange=()=>{};
+$('#size').oninput=e=>$('#sv').textContent=e.target.value;
+$('#fimg').onchange=e=>{openImages([...e.target.files]);e.target.value=''};$('#fproj').onchange=e=>{if(e.target.files[0])openProj(e.target.files[0]);e.target.value=''};
+function pos(e){const r=view.getBoundingClientRect();return{x:(e.clientX-r.left)/zoom,y:(e.clientY-r.top)/zoom}}
+let drag=null;
+view.addEventListener('pointerdown',e=>{if(e.button!==0)return;const p=pos(e);view.setPointerCapture(e.pointerId);
+ if(tool==='text'){const s=$('#txt').value;if(!s)return;push();const l=newLayer('Text: '+s.slice(0,16)),x=l.c.getContext('2d');x.fillStyle=$('#col').value;x.font=`600 ${$('#tsize').value}px Manrope,"Noto Sans Bengali","Nirmala UI",sans-serif`;x.textBaseline='top';x.fillText(s,p.x,p.y);sync();return}
+ if(tool==='bucket'){bucket(p);return}if(SH[tool]){drag={s:p,l:p};lp=[p];return}if(tool==='eyedrop'){const d=vc.getImageData(Math.floor(p.x),Math.floor(p.y),1,1).data;if(d[3]){$('#col').value='#'+[d[0],d[1],d[2]].map(v=>v.toString(16).padStart(2,'0')).join('')}return}
+ push();drag={s:p,l:p,lx:act.x,ly:act.y};if(tool==='brush'||tool==='eraser')stroke(p,p)});
+function stroke(a,b){const x=act.c.getContext('2d');x.save();clipTo(x);x.lineCap=x.lineJoin='round';x.lineWidth=$('#size').value;x.globalAlpha=$('#bop').value/100;
+ if(tool==='eraser')x.globalCompositeOperation='destination-out';else x.strokeStyle=x.fillStyle=$('#col').value;
+ x.beginPath();x.moveTo(a.x-act.x,a.y-act.y);x.lineTo(b.x-act.x+.01,b.y-act.y);x.stroke();x.restore();render()}
+view.addEventListener('pointermove',e=>{const p=pos(e);$('#px').textContent=Math.round(p.x)+', '+Math.round(p.y);if(drag&&SH[tool]){shapeMove(p);return}if(!drag)return;
+ if(tool==='move'){act.x=Math.round(drag.lx+p.x-drag.s.x);act.y=Math.round(drag.ly+p.y-drag.s.y);render()}
+ else if(tool==='brush'||tool==='eraser'){stroke(drag.l,p);drag.l=p}
+ else if(tool==='crop'){const x=Math.max(0,Math.min(W,Math.min(drag.s.x,p.x))),y=Math.max(0,Math.min(H,Math.min(drag.s.y,p.y))),x2=Math.min(W,Math.max(drag.s.x,p.x)),y2=Math.min(H,Math.max(drag.s.y,p.y));cropR={x:Math.round(x),y:Math.round(y),w:Math.round(x2-x),h:Math.round(y2-y)};const c=$('#crop');c.style.display='block';Object.assign(c.style,{left:cropR.x*zoom+'px',top:cropR.y*zoom+'px',width:cropR.w*zoom+'px',height:cropR.h*zoom+'px'})}});
+view.addEventListener('pointerup',()=>{if(drag&&SH[tool]){finishShape();return}if(drag&&(tool==='brush'||tool==='eraser'||tool==='move'))panel();if(drag&&tool==='crop')hist.pop();drag=null});
+$('#work').addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();e.deltaY<0?A.zin():A.zout()},{passive:false});
+document.addEventListener('keydown',e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)&&e.target.type!=='range')return;const k=e.key.toLowerCase(),c=e.ctrlKey||e.metaKey;
+ if(c){const m={z:e.shiftKey?'redo':'undo',y:'redo',j:'ldup',e:'lmerge',s:'saveProj',o:'openImg',n:e.shiftKey?'lnew':null,d:'desel',a:'selAll',i:e.shiftKey?'selInv':null}[k];if(m){e.preventDefault();A[m]()}return}
+ if(k==='delete'||k==='backspace'){A.selClear();return}if(k==='enter'&&tool==='crop')return applyCrop();
+ const t={v:'move',b:'brush',e:'eraser',t:'text',c:'crop',i:'eyedrop',m:'rsel',l:'lasso',g:'grad',k:'bucket',u:'srect'}[k];if(t)setTool(t);if(k==='+'||k==='=')A.zin();if(k==='-')A.zout()});
+function welcome(again){$('#card').innerHTML=`<h2>PHOTOCROP</h2><p>${again?'Start a new project.':'Edit photos in layers, right in your browser.'}</p>
+ <div class="row"><button class="big pri" id="w1">New 1920 × 1080</button><button class="big" id="w2">New 1080 × 1080</button><button class="big" id="w3">Open image…</button><button class="big" id="w4">Open project…</button></div>
+ <div class="row">Custom <input type="number" id="cw" value="1280" style="width:76px"> × <input type="number" id="ch" value="800" style="width:76px"><button id="w5">Create</button></div>
+ <p>Projects save as .photocrop.json with every layer kept editable. AI tools are not included in this build.</p><div class="row"><button id="w6">Feature status</button></div>`;
+ $('#modal').classList.add('on');const go=(w,h)=>{initDoc(w,h,'#ffffff');$('#modal').classList.remove('on')};
+ $('#w1').onclick=()=>go(1920,1080);$('#w2').onclick=()=>go(1080,1080);$('#w5').onclick=()=>{const w=+$('#cw').value,h=+$('#ch').value;w>0&&h>0&&w<=8000&&h<=8000?go(w,h):toast('Use 1–8000 px')};
+ $('#w3').onclick=()=>{$('#modal').classList.remove('on');if(!layers.length)initDoc(W,H,'#ffffff');blank=true;$('#fimg').click()};$('#w4').onclick=()=>{$('#modal').classList.remove('on');$('#fproj').click()};$('#w6').onclick=A.status}
+let sel=null,ghost=null,lp=[];const SH={rsel:1,esel:1,lasso:1,grad:1,srect:1,sell:1,line:1};
+function ants(){for(const[g,c]of[[sel,'#fff'],[ghost,'#2fd4e6']]){if(!g)continue;vc.save();vc.lineWidth=1.5/zoom;vc.setLineDash([6/zoom,4/zoom]);vc.strokeStyle='#000';vc.stroke(g.p);vc.lineDashOffset=5/zoom;vc.strokeStyle=c;vc.stroke(g.p);vc.restore()}}
+function clipTo(x){if(!sel)return;x.translate(-act.x,-act.y);x.clip(sel.p,sel.rule||'nonzero');x.translate(act.x,act.y)}
+function shapePath(a,b){const q=new Path2D(),x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(a.x-b.x),h=Math.abs(a.y-b.y);if(tool==='rsel'||tool==='srect')q.rect(x,y,w,h);else if(tool==='esel'||tool==='sell')q.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,7);else if(tool==='lasso'){q.moveTo(lp[0].x,lp[0].y);lp.forEach(t=>q.lineTo(t.x,t.y));q.closePath()}else{q.moveTo(a.x,a.y);q.lineTo(b.x,b.y)}return q}
+function shapeMove(p){drag.l=p;lp.push(p);ghost={p:shapePath(drag.s,p)};render()}
+function finishShape(){const a=drag.s,b=drag.l,q=shapePath(a,b),isSel=tool==='rsel'||tool==='esel'||tool==='lasso';drag=null;ghost=null;if(Math.hypot(a.x-b.x,a.y-b.y)<2){if(isSel)sel=null;render();return}if(isSel){sel={p:q,rule:'nonzero'};render();return}push();const x=act.c.getContext('2d');x.save();clipTo(x);x.translate(-act.x,-act.y);if(tool==='grad'){const g=x.createLinearGradient(a.x,a.y,b.x,b.y);g.addColorStop(0,$('#col').value);g.addColorStop(1,$('#col2').value);x.fillStyle=g;x.fillRect(act.x,act.y,act.c.width,act.c.height)}else{x.fillStyle=x.strokeStyle=$('#col').value;x.lineWidth=$('#size').value;x.lineCap='round';tool==='line'?x.stroke(q):x.fill(q)}x.restore();sync()}
+function bucket(p){const l=act,x=Math.floor(p.x-l.x),y=Math.floor(p.y-l.y),w=l.c.width,h=l.c.height;if(x<0||y<0||x>=w||y>=h)return;push();const c=l.c.getContext('2d'),a=c.getImageData(0,0,w,h).data,i0=(y*w+x)*4,s=[a[i0],a[i0+1],a[i0+2],a[i0+3]],f=$('#col').value,r=[1,3,5].map(k=>parseInt(f.substr(k,2),16)),m=i=>Math.abs(a[i]-s[0])+Math.abs(a[i+1]-s[1])+Math.abs(a[i+2]-s[2])+Math.abs(a[i+3]-s[3])<=60,seen=new Uint8Array(w*h),st=[x,y];while(st.length){const yy=st.pop(),xx=st.pop();if(xx<0||yy<0||xx>=w||yy>=h)continue;const k=yy*w+xx;if(seen[k]||!m(k*4))continue;seen[k]=1;st.push(xx+1,yy,xx-1,yy,xx,yy+1,xx,yy-1)}const t=mk(w,h),tc=t.getContext('2d'),td=tc.createImageData(w,h);for(let k=0;k<w*h;k++)if(seen[k]){td.data[k*4]=r[0];td.data[k*4+1]=r[1];td.data[k*4+2]=r[2];td.data[k*4+3]=255}tc.putImageData(td,0,0);c.save();clipTo(c);c.drawImage(t,0,0);c.restore();sync()}
+setTool('brush');initDoc(1280,800,'#ffffff');welcome(false);
+window.addEventListener('resize',()=>{});
+</script>
+</body>
+</html>
